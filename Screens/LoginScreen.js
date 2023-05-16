@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     btnTitle: {
         color: '#FFFFFF',
         fontSize: 16,
-        fontWeight: 400,
+        fontWeight: '400',
     },
     form: {
         paddingTop: 5,
