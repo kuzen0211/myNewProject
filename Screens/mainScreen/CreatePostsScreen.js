@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Camera, CameraType } from 'expo-camera';
+import * as MediaLibrary from 'expo-media-library';
+import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 import {
-    Image,
     StyleSheet,
     Text,
     View,
@@ -9,9 +12,16 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
     Keyboard,
+    Platform,
+    Image,
 } from 'react-native';
 //impotr icon
-import { Octicons, Feather } from '@expo/vector-icons';
+import {
+    Octicons,
+    Feather,
+    SimpleLineIcons,
+    MaterialIcons,
+} from '@expo/vector-icons';
 
 const iconUpload = require('../../assets/uploadFoto.png');
 const initialState = {
@@ -19,9 +29,27 @@ const initialState = {
     location: '',
 };
 
-const CreatePostsScreen = () => {
-    const [isShowKeyboard, setIsShowKeyboard] = useState(false);
+const CreatePostsScreen = ({ navigation }) => {
     const [state, setState] = useState(initialState);
+    const [isShowKeyboard, setIsShowKeyboard] = useState(false);
+
+    const [cameraRef, setCameraRef] = useState(null);
+    const [photo, setPhoto] = useState(null);
+    const [type, setType] = useState(CameraType.back);
+
+    const [location, setLocation] = useState(null);
+
+    useEffect(() => {
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                console.log('Permission to access location was denied');
+                return;
+            }
+            let locationRes = await Location.getCurrentPositionAsync({});
+            setLocation(locationRes);
+        })();
+    }, []);
 
     const keyboardHide = () => {
         setIsShowKeyboard(false);
@@ -31,41 +59,137 @@ const CreatePostsScreen = () => {
     const submit = () => {
         setIsShowKeyboard(false);
         Keyboard.dismiss();
-        console.log(state);
+        const posts = {
+            title: state.title,
+            place: state.location,
+            photo,
+            location,
+        };
+
+        navigation.navigate('DefaultScreen', { posts });
+        // setState(initialState);
+        // setPhoto(null);
+    };
+
+    const frontOrBack = () => {
+        setType(type === CameraType.back ? CameraType.front : CameraType.back);
+    };
+
+    const takePicture = async () => {
+        try {
+            if (cameraRef) {
+                const { uri } = await cameraRef.takePictureAsync();
+                console.log(uri);
+                setPhoto(uri);
+
+                let location = await Location.getCurrentPositionAsync({});
+                setLocation(location);
+                console.log('location', setLocation(location));
+            }
+        } catch (error) {
+            console.log('Error taking picture:', error);
+        }
+    };
+
+    const addFromGallery = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+        if (!result.canceled) {
+            setPhoto(result.assets[0].uri);
+        }
+    };
+
+    const deletePhoto = () => {
+        setPhoto(null);
         setState(initialState);
     };
+
     return (
         <TouchableWithoutFeedback onPress={keyboardHide}>
             <View style={styles.container}>
-                <View style={styles.header}>
+                <View style={styles.postsHeader}>
+                    <TouchableOpacity
+                        style={styles.btnBack}
+                        onPress={() => navigation.navigate('PostsScreen')}
+                    >
+                        <MaterialIcons
+                            name="keyboard-backspace"
+                            size={24}
+                            color="black"
+                        />
+                    </TouchableOpacity>
                     <Text style={styles.headerTitle}>Створити публікацію</Text>
                 </View>
+
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
                     <View
                         style={{
-                            ...styles.test,
-                            marginTop: isShowKeyboard ? -210 : 0,
+                            ...styles.contentContainer,
+                            marginTop: isShowKeyboard ? -80 : 0,
                         }}
                     >
-                        <View style={styles.contentContainer}>
-                            <View style={styles.imageContainer}>
-                                <View style={styles.imageBg}></View>
-                                <Image
-                                    source={iconUpload}
-                                    style={styles.iconUpload}
-                                />
-                                <Text style={styles.actionFoto}>
-                                    Загрузити фото
-                                </Text>
+                        <Camera
+                            style={styles.camera}
+                            type={type}
+                            ref={ref => setCameraRef(ref)}
+                            ratio="1:1"
+                        >
+                            {photo && (
+                                <View style={styles.photoContainer}>
+                                    <Image
+                                        style={styles.photo}
+                                        source={{ uri: photo }}
+                                    />
+                                </View>
+                            )}
+
+                            <View style={styles.photoView}>
+                                <TouchableOpacity
+                                    style={styles.flipContainer}
+                                    onPress={frontOrBack}
+                                >
+                                    <Text
+                                        style={{
+                                            fontSize: 18,
+                                            color: 'white',
+                                        }}
+                                    >
+                                        Flip
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.button}
+                                    onPress={takePicture}
+                                >
+                                    <View style={styles.takePhotoOut}>
+                                        <SimpleLineIcons
+                                            name="camera"
+                                            size={24}
+                                            color="white"
+                                        />
+                                    </View>
+                                </TouchableOpacity>
                             </View>
-                        </View>
+                        </Camera>
+
+                        <Text
+                            style={styles.actionFoto}
+                            onPress={addFromGallery}
+                        >
+                            Загрузити фото
+                        </Text>
 
                         <View style={styles.inputArea}>
                             <TextInput
                                 placeholder="Назва..."
                                 style={styles.postTitle}
+                                placeholderTextColor={'#BDBDBD'}
                                 onFocus={() => setIsShowKeyboard(true)}
                                 value={state.title}
                                 onChangeText={value =>
@@ -83,8 +207,9 @@ const CreatePostsScreen = () => {
                                     color="#BDBDBD"
                                 />
                                 <TextInput
-                                    placeholder={` Місцевість...`}
+                                    placeholder={'Місцевість...'}
                                     style={styles.postLocation}
+                                    placeholderTextColor={'#BDBDBD'}
                                     onFocus={() => setIsShowKeyboard(true)}
                                     value={state.location}
                                     onChangeText={value =>
@@ -108,6 +233,7 @@ const CreatePostsScreen = () => {
                             <TouchableOpacity
                                 activeOpacity={0.8}
                                 style={styles.deleteBtn}
+                                onPress={deletePhoto}
                             >
                                 <Feather
                                     name="trash-2"
@@ -126,56 +252,78 @@ const CreatePostsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-
         backgroundColor: '#FFFFFF',
-        paddingLeft: 16,
-        paddingRight: 16,
     },
-    header: {
-        paddingBottom: 11,
-
+    postsHeader: {
+        flexDirection: 'row',
         height: 88,
         borderBottomWidth: 1,
         borderBottomColor: '#E5E5E5',
-        justifyContent: 'flex-end',
-        alignItems: 'center',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-end',
+
+        paddingBottom: 11,
     },
     headerTitle: {
         color: '#212121',
         fontSize: 17,
         fontFamily: 'Roboto-500',
     },
-
-    contentContainer: {
-        // flex: 1,
-        // flexDirection: 'column',
+    btnBack: {
+        marginLeft: 16,
+        marginRight: 58,
     },
-    imageContainer: {
+    contentContainer: { paddingHorizontal: 16 },
+    camera: {
         position: 'relative',
+        height: 240,
         marginTop: 32,
-        marginBottom: 48,
+
+        marginBottom: 8,
+    },
+    photoContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+    },
+    photo: {
+        height: 240,
+        width: 343,
+    },
+    photoView: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        justifyContent: 'flex-end',
+    },
+
+    flipContainer: {
+        flex: 0.1,
+        alignSelf: 'flex-end',
+    },
+
+    button: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    iconUpload: {
-        position: 'absolute',
-        top: 120 - 30,
-        zIndex: 999,
-    },
-    imageBg: {
-        width: '100%',
-        height: 240,
-        backgroundColor: '#F6F6F6',
-        borderColor: '#E8E8E8',
-        borderRadius: 8,
-        marginBottom: 8,
+
+    takePhotoOut: {
+        borderWidth: 2,
+        borderColor: 'white',
+        height: 60,
+        width: 60,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 50,
+        backgroundColor: 'hsla(360, 100%, 100%, 0.3)',
     },
     actionFoto: {
         alignSelf: 'flex-start',
         fontFamily: 'Roboto-400',
+        marginBottom: 32,
     },
-    test: {},
     inputArea: {
-        // alignItems: 'center',
         justifyContent: 'flex-start',
     },
     postTitle: {
@@ -216,8 +364,9 @@ const styles = StyleSheet.create({
         marginTop: 32,
         borderRadius: 50,
         backgroundColor: '#FF6C00',
-        marginBottom: 10,
+        marginBottom: 50,
     },
+
     buttonText: {
         fontSize: 20,
         lineHeight: 19,

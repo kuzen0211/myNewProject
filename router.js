@@ -29,7 +29,7 @@ export const useRoute = isAuth => {
         );
     }
     return (
-        <MainTab.Navigator tabBarOptions={{ showLabel: false }}>
+        <MainTab.Navigator screenOptions={{ showLabel: false }}>
             <MainTab.Screen
                 name="PostsScreen"
                 component={PostsScreen}
@@ -48,6 +48,8 @@ export const useRoute = isAuth => {
                     tabBarIcon: ({ focused, size, color }) => (
                         <AntDesign name="plus" size={size} color={color} />
                     ),
+                    unmountOnBlur: true,
+                    tabBarStyle: { display: 'none' },
                 }}
             />
             <MainTab.Screen

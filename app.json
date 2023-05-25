@@ -26,6 +26,34 @@
         "web": {
             "favicon": "./assets/favicon.png"
         },
-        "jsEngine": "hermes"
+        "jsEngine": "hermes",
+        "permissions": {
+            "camera": {
+                "accessDescription": "Allow MyApp to access your camera",
+                "askAgain": true,
+                "required": true
+            },
+            "mediaLibrary": {
+                "accessDescription": "Allow MyApp to access your media library",
+                "askAgain": true,
+                "required": true
+            }
+        },
+        "plugins": [
+            [
+                "expo-media-library",
+                {
+                    "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
+                    "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
+                    "isAccessMediaLocationEnabled": true
+                }
+            ],
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera."
+                }
+            ]
+        ]
     }
 }

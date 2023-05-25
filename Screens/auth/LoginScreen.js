@@ -1,4 +1,3 @@
-import { useRoute } from '../../router';
 import React, { useState } from 'react';
 import {
     ImageBackground,
@@ -31,6 +30,7 @@ export default function LoginScreen({ navigation }) {
         setIsShowKeyboard(false);
         Keyboard.dismiss();
         console.log(state);
+
         setState(initialState);
     };
 
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     btnTitle: {
-        color: '#FFFFFF',
+        color: '#ffffff',
         fontSize: 16,
         fontWeight: 'Roboto-400',
     },
