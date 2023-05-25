@@ -28,10 +28,12 @@ const CommentsScreen = ({ route }) => {
     return (
         <TouchableWithoutFeedback onPress={handleKeyboadHide}>
             <View style={styles.container}>
-                <Image
-                    source={{ uri: route.params.photo }}
-                    style={styles.photo}
-                />
+                {!isShowKeyboard && (
+                    <Image
+                        source={{ uri: route.params.photo }}
+                        style={styles.photo}
+                    />
+                )}
 
                 <View style={{ marginBottom: 10 }}>
                     <TextInput
