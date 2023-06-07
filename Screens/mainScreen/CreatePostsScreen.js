@@ -23,7 +23,6 @@ import {
     MaterialIcons,
 } from '@expo/vector-icons';
 
-const iconUpload = require('../../assets/uploadFoto.png');
 const initialState = {
     title: '',
     location: '',
@@ -125,66 +124,67 @@ const CreatePostsScreen = ({ navigation }) => {
                     <Text style={styles.headerTitle}>Створити публікацію</Text>
                 </View>
 
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                <View
+                    style={{
+                        ...styles.contentContainer,
+                    }}
                 >
-                    <View
-                        style={{
-                            ...styles.contentContainer,
-                            marginTop: isShowKeyboard ? -80 : 0,
-                        }}
-                    >
-                        <Camera
-                            style={styles.camera}
-                            type={type}
-                            ref={ref => setCameraRef(ref)}
-                            ratio="1:1"
-                        >
-                            {photo && (
+                    {!isShowKeyboard && (
+                        <View style={styles.viewContainer}>
+                            {photo ? (
                                 <View style={styles.photoContainer}>
                                     <Image
                                         style={styles.photo}
                                         source={{ uri: photo }}
                                     />
                                 </View>
-                            )}
-
-                            <View style={styles.photoView}>
-                                <TouchableOpacity
-                                    style={styles.flipContainer}
-                                    onPress={frontOrBack}
+                            ) : (
+                                <Camera
+                                    style={styles.camera}
+                                    type={type}
+                                    ref={ref => setCameraRef(ref)}
+                                    ratio="1:1"
                                 >
-                                    <Text
-                                        style={{
-                                            fontSize: 18,
-                                            color: 'white',
-                                        }}
-                                    >
-                                        Flip
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.button}
-                                    onPress={takePicture}
-                                >
-                                    <View style={styles.takePhotoOut}>
-                                        <SimpleLineIcons
-                                            name="camera"
-                                            size={24}
-                                            color="white"
-                                        />
+                                    <View style={styles.photoView}>
+                                        <TouchableOpacity
+                                            style={styles.flipContainer}
+                                            onPress={frontOrBack}
+                                        >
+                                            <Text
+                                                style={{
+                                                    fontSize: 18,
+                                                    color: 'white',
+                                                }}
+                                            >
+                                                Flip
+                                            </Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={styles.button}
+                                            onPress={takePicture}
+                                            disabled={photo}
+                                        >
+                                            <View style={styles.takePhotoOut}>
+                                                <SimpleLineIcons
+                                                    name="camera"
+                                                    size={24}
+                                                    color="white"
+                                                />
+                                            </View>
+                                        </TouchableOpacity>
                                     </View>
-                                </TouchableOpacity>
-                            </View>
-                        </Camera>
+                                </Camera>
+                            )}
+                        </View>
+                    )}
 
-                        <Text
-                            style={styles.actionFoto}
-                            onPress={addFromGallery}
-                        >
-                            Загрузити фото
-                        </Text>
+                    <Text style={styles.actionFoto} onPress={addFromGallery}>
+                        Загрузити фото
+                    </Text>
 
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    >
                         <View style={styles.inputArea}>
                             <TextInput
                                 placeholder="Назва..."
@@ -221,14 +221,16 @@ const CreatePostsScreen = ({ navigation }) => {
                                 />
                             </View>
                         </View>
+                    </KeyboardAvoidingView>
 
-                        <TouchableOpacity
-                            activeOpacity={0.6}
-                            style={styles.sendPostButton}
-                            onPress={submit}
-                        >
-                            <Text style={styles.buttonText}>Опублікувати</Text>
-                        </TouchableOpacity>
+                    <TouchableOpacity
+                        activeOpacity={0.6}
+                        style={styles.sendPostButton}
+                        onPress={submit}
+                    >
+                        <Text style={styles.buttonText}>Опублікувати</Text>
+                    </TouchableOpacity>
+                    {!isShowKeyboard && (
                         <View style={styles.deleteBtnContainer}>
                             <TouchableOpacity
                                 activeOpacity={0.8}
@@ -242,8 +244,8 @@ const CreatePostsScreen = ({ navigation }) => {
                                 />
                             </TouchableOpacity>
                         </View>
-                    </View>
-                </KeyboardAvoidingView>
+                    )}
+                </View>
             </View>
         </TouchableWithoutFeedback>
     );
@@ -274,37 +276,36 @@ const styles = StyleSheet.create({
         marginRight: 58,
     },
     contentContainer: { paddingHorizontal: 16 },
+    viewContainer: {},
     camera: {
-        position: 'relative',
         height: 240,
         marginTop: 32,
 
         marginBottom: 8,
     },
     photoContainer: {
-        position: 'absolute',
+        marginTop: 32,
+        marginBottom: 8,
         top: 0,
         left: 0,
     },
+
     photo: {
         height: 240,
-        width: 343,
     },
     photoView: {
-        flex: 1,
         backgroundColor: 'transparent',
-        justifyContent: 'flex-end',
     },
 
     flipContainer: {
-        flex: 0.1,
         alignSelf: 'flex-end',
+        marginRight: 10,
+        marginTop: 10,
     },
 
     button: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        marginTop: 60,
+        alignSelf: 'center',
     },
 
     takePhotoOut: {
@@ -312,12 +313,13 @@ const styles = StyleSheet.create({
         borderColor: 'white',
         height: 60,
         width: 60,
-        display: 'flex',
+
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 50,
         backgroundColor: 'hsla(360, 100%, 100%, 0.3)',
     },
+
     actionFoto: {
         alignSelf: 'flex-start',
         fontFamily: 'Roboto-400',

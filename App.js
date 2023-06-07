@@ -1,11 +1,14 @@
 import { useFonts } from 'expo-font';
 import { NavigationContainer } from '@react-navigation/native';
 import { useRoute } from './router';
-import React from 'react';
+import React, { useState } from 'react';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { store } from './redux/store';
+
+import { authCurrent } from './redux/auth/authOperations';
+import { Main } from './components/Main';
 
 export default function App() {
-    const routing = useRoute({}); //null - register/login && object{} - userMenu
-
     const [fontsLoaded] = useFonts({
         'Roboto-400': require('./assets/fonts/Roboto-Regular.ttf'),
         'Roboto-500': require('./assets/fonts/Roboto-Medium.ttf'),
@@ -16,5 +19,9 @@ export default function App() {
         return null;
     }
 
-    return <NavigationContainer>{routing}</NavigationContainer>;
+    return (
+        <Provider store={store}>
+            <Main />
+        </Provider>
+    );
 }
