@@ -14,8 +14,36 @@ import {
     EvilIcons,
     Ionicons,
 } from '@expo/vector-icons';
+import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { useEffect } from 'react';
+import { db } from '../../firebase/config';
+import { FlatList } from 'react-native-gesture-handler';
+import { authLogout } from '../../redux/auth/authOperations';
+const userFotoExmpl = require('../../assets/noAvatar.png');
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }) => {
+    const { name, avatar, userId } = useSelector(state => state.auth);
+    const [posts, setPosts] = useState([]);
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        getUserPosts();
+    }, []);
+
+    const getUserPosts = async () => {
+        const posts = collection(db, 'posts');
+        const privat = query(posts, where('userId', '==', userId));
+        onSnapshot(privat, data => {
+            console.log(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+            setPosts(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+        });
+    };
+
+    const signOut = () => {
+        dispatch(authLogout());
+    };
     return (
         <ImageBackground
             style={styles.background}
@@ -25,7 +53,7 @@ const ProfileScreen = () => {
                 <View style={styles.avatarContainer}>
                     <Image
                         style={styles.avatar}
-                        source={require('../../assets/fotoExmpl.png')}
+                        source={avatar ? avatar : userFotoExmpl}
                     />
                     <TouchableOpacity style={styles.deleteButton}>
                         <Ionicons
@@ -36,61 +64,87 @@ const ProfileScreen = () => {
                         />
                     </TouchableOpacity>
                 </View>
-                <Entypo
+                <TouchableOpacity
+                    onPress={signOut}
                     style={styles.signOutButton}
-                    name="log-out"
-                    size={24}
-                    color="#BDBDBD"
-                />
-                <Text style={styles.userName}>Natali Romanova</Text>
-                <View style={styles.postsContainer}>
-                    <Image
-                        style={styles.postPhoto}
-                        source={require('../../assets/imageEx.jpg')}
-                    />
-                    <Text style={styles.postTitle}>Ліс</Text>
-
-                    <View style={styles.postInformationContainer}>
-                        <View style={{ flexDirection: 'row' }}>
-                            <TouchableOpacity
-                                style={{
-                                    ...styles.postComments,
-                                    marginRight: 25,
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <FontAwesome
-                                    name="comment-o"
-                                    size={24}
-                                    color={'#FF6C00'}
-                                />
-                                <Text style={styles.numberComments}>8</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.postLike}
-                                activeOpacity={0.7}
-                            >
-                                <SimpleLineIcons
-                                    name="like"
-                                    size={24}
-                                    color="#FF6C00"
-                                />
-                                <Text style={styles.numberLike}>123</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <TouchableOpacity
-                            style={styles.postLocation}
-                            activeOpacity={0.7}
-                        >
-                            <SimpleLineIcons
-                                name="location-pin"
-                                size={24}
-                                color="#BDBDBD"
+                >
+                    <Entypo name="log-out" size={24} color="#BDBDBD" />
+                </TouchableOpacity>
+                <Text style={styles.userName}>{name}</Text>
+                <FlatList
+                    data={posts}
+                    renderItem={({ item }) => (
+                        <View style={styles.postsContainer}>
+                            <Image
+                                style={styles.postPhoto}
+                                source={avatar ? avatar : { uri: item.photo }}
                             />
-                            <Text style={styles.locationText}>Ukraine</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                            <Text style={styles.postTitle}>{item.title}</Text>
+
+                            <View style={styles.postInformationContainer}>
+                                <View style={{ flexDirection: 'row' }}>
+                                    <TouchableOpacity
+                                        style={{
+                                            ...styles.postComments,
+                                            marginRight: 25,
+                                        }}
+                                        activeOpacity={0.7}
+                                        onPress={() =>
+                                            navigation.navigate(
+                                                'CommentsScreen',
+                                                {
+                                                    postId: item.id,
+                                                    photo: item.photo,
+                                                }
+                                            )
+                                        }
+                                    >
+                                        <FontAwesome
+                                            name="comment-o"
+                                            size={24}
+                                            color={'#FF6C00'}
+                                        />
+                                        <Text style={styles.numberComments}>
+                                            8
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.postLike}
+                                        activeOpacity={0.7}
+                                    >
+                                        <SimpleLineIcons
+                                            name="like"
+                                            size={24}
+                                            color="#FF6C00"
+                                        />
+                                        <Text style={styles.numberLike}>
+                                            123
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.postLocation}
+                                    activeOpacity={0.7}
+                                    onPress={() =>
+                                        navigation.navigate('MapScreen', {
+                                            location: item.location,
+                                        })
+                                    }
+                                >
+                                    <SimpleLineIcons
+                                        name="location-pin"
+                                        size={24}
+                                        color="#BDBDBD"
+                                    />
+                                    <Text style={styles.locationText}>
+                                        {item.place}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+                    keyExtractor={item => item.id}
+                />
             </View>
         </ImageBackground>
     );

@@ -6,15 +6,16 @@ import { useEffect } from 'react';
 import { authCurrent } from '../redux/auth/authOperations';
 
 export function Main() {
-    const stateChange = useSelector(state => {
-        return state.auth.stateChange;
-    });
     const dispatch = useDispatch();
 
     useEffect(() => {
         dispatch(authCurrent());
     }, []);
 
+    const stateChange = useSelector(state => {
+        console.log('state.auth.stateChange', state.auth.stateChange);
+        return state.auth.stateChange;
+    });
     const routing = useRoute(stateChange);
     return <NavigationContainer>{routing}</NavigationContainer>;
 }

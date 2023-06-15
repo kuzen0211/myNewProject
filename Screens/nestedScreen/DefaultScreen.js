@@ -9,34 +9,57 @@ import {
     FlatList,
     TouchableOpacity,
 } from 'react-native';
+import { authLogout } from '../../redux/auth/authOperations';
+import { useDispatch, useSelector } from 'react-redux';
 
-const userFotoExmpl = require('../../assets/fotoExmpl.png');
+const userFotoExmpl = require('../../assets/noAvatar.png');
 
 const logOutIcon = require('../../assets/log-out.png');
 
-const DefaultScreen = ({ route, navigation }) => {
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+
+const DefaultScreen = ({ navigation }) => {
     const [posts, setPosts] = useState([]);
+    const dispatch = useDispatch();
+    const { email, name, avatar } = useSelector(state => state.auth);
+    console.log(avatar);
+
+    const getAllPosts = async () => {
+        onSnapshot(collection(db, 'posts'), data => {
+            setPosts(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+        });
+    };
 
     useEffect(() => {
-        if (route.params) {
-            console.log(route.params);
-            setPosts(prevState => [...prevState, route.params]);
-        }
-    }, [route.params]);
+        getAllPosts();
+    }, []);
+
+    const singOut = () => {
+        dispatch(authLogout());
+    };
 
     return (
         <View style={styles.postsContainer}>
             <View style={styles.postsHeader}>
                 <Text style={styles.headerTitle}>Публікації</Text>
-                <Image source={logOutIcon} style={styles.logOutIcon} />
+                <TouchableOpacity style={styles.logOutIcon} onPress={singOut}>
+                    <Image source={logOutIcon} />
+                </TouchableOpacity>
             </View>
-            <View style={styles.postsHero}>
-                <Image style={styles.userFoto} source={userFotoExmpl} />
+            <TouchableOpacity
+                style={styles.postsHero}
+                onPress={() => navigation.navigate('ProfileScreen')}
+            >
+                <Image
+                    style={styles.userFoto}
+                    source={avatar ? avatar : userFotoExmpl}
+                />
                 <View>
-                    <Text style={styles.userName}>Natali Romanova</Text>
-                    <Text style={styles.userEmail}>email@example.com</Text>
+                    <Text style={styles.userName}>{name}</Text>
+                    <Text style={styles.userEmail}>{email}</Text>
                 </View>
-            </View>
+            </TouchableOpacity>
             <View style={styles.flatListContainer}>
                 <FlatList
                     data={posts}
@@ -44,21 +67,19 @@ const DefaultScreen = ({ route, navigation }) => {
                     renderItem={({ item }) => (
                         <View style={styles.container}>
                             <Image
-                                source={{ uri: item.posts.photo }}
+                                source={{ uri: item.photo }}
                                 style={styles.image}
                             />
-                            <Text style={styles.titlePost}>
-                                {item.posts.title}
-                            </Text>
+                            <Text style={styles.titlePost}>{item.title}</Text>
                             <View style={styles.contentContainer}>
                                 <TouchableOpacity
                                     activeOpacity={0.7}
                                     style={styles.commentsBtn}
                                     onPress={() =>
-                                        navigation.navigate(
-                                            'CommentsScreen',
-                                            item.posts
-                                        )
+                                        navigation.navigate('CommentsScreen', {
+                                            postId: item.id,
+                                            photo: item.photo,
+                                        })
                                     }
                                 >
                                     <FontAwesome
@@ -72,10 +93,9 @@ const DefaultScreen = ({ route, navigation }) => {
                                     style={styles.postLocation}
                                     activeOpacity={0.7}
                                     onPress={() =>
-                                        navigation.navigate(
-                                            'MapScreen',
-                                            item.posts
-                                        )
+                                        navigation.navigate('MapScreen', {
+                                            location: item.location,
+                                        })
                                     }
                                 >
                                     <SimpleLineIcons
@@ -84,7 +104,7 @@ const DefaultScreen = ({ route, navigation }) => {
                                         color="#BDBDBD"
                                     />
                                     <Text style={styles.locationText}>
-                                        {item.posts.place}
+                                        {item.place}
                                     </Text>
                                 </TouchableOpacity>
                             </View>

@@ -18,7 +18,7 @@ export const register = createAsyncThunk(
                 displayName: login,
                 photoURL: avatar,
             });
-            const { uid, displayName, photoURL } = await auth.currentUser;
+            const { uid, displayName, photoURL } = auth.currentUser;
 
             return {
                 uid,
@@ -75,6 +75,7 @@ export const authCurrent = createAsyncThunk(
             onAuthStateChanged(auth, user => {
                 if (user) {
                     const { uid, displayName, email, photoURL } = user;
+
                     return thunkAPI.fulfillWithValue({
                         uid,
                         email,

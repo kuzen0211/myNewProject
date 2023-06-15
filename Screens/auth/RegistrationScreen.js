@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { register } from '../../redux/auth/authOperations';
+import * as ImagePicker from 'expo-image-picker';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 const initialState = {
     login: '',
@@ -24,6 +26,7 @@ export default function RegistrationScreen({ navigation }) {
     const [isShowKeyboard, setIsShowKeyboard] = useState(false);
     const [state, setState] = useState(initialState);
     const [hidePassword, setHidePassword] = useState(true);
+    const [avatar, setAvatar] = useState();
 
     const dispatch = useDispatch();
 
@@ -32,18 +35,40 @@ export default function RegistrationScreen({ navigation }) {
         Keyboard.dismiss();
     };
 
-    const submit = () => {
-        setIsShowKeyboard(false);
-        Keyboard.dismiss();
-        console.log(state);
-        dispatch(register(state));
-        setState(initialState);
+    const submit = async () => {
+        const avatar = await uploadAvatarToServer();
+        dispatch(register({ ...state, avatar }));
+        setFormData(initialState);
     };
 
     const toggleHidePassword = () => {
         setHidePassword(!hidePassword);
     };
 
+    const uploadAvatarToServer = async () => {
+        const response = await fetch(avatar);
+        console.log(avatar);
+        const file = await response.blob();
+        const avatarId = new Date().toString();
+        const storageRef = ref(storage, `avatar/${avatarId}`);
+        await uploadBytes(storageRef, file);
+        const avatarUrl = await getDownloadURL(
+            ref(storage, `avatar/${avatarId}`)
+        );
+        return avatarUrl;
+    };
+
+    const uploadAvatar = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 0,
+        });
+
+        if (!result.canceled) {
+            setAvatar(result.assets[0].uri);
+        }
+    };
     return (
         <TouchableWithoutFeedback onPress={keyboardHide}>
             <View style={styles.container}>
@@ -53,8 +78,19 @@ export default function RegistrationScreen({ navigation }) {
                 >
                     <View style={styles.inner}>
                         <View style={styles.avatarContainer}>
-                            <Image style={styles.avatar} />
-                            <TouchableOpacity style={styles.addBtn}>
+                            <ImageBackground style={styles.avatar}>
+                                {avatar && (
+                                    <Image
+                                        style={styles.avatar}
+                                        source={{ uri: avatar }}
+                                    />
+                                )}
+                            </ImageBackground>
+
+                            <TouchableOpacity
+                                style={styles.addBtn}
+                                onPress={uploadAvatar}
+                            >
                                 <Image
                                     source={require('../../assets/add.png')}
                                 />
@@ -202,6 +238,8 @@ const styles = StyleSheet.create({
         width: 120,
         height: 120,
         borderRadius: 16,
+        resizeMode: 'cover',
+        overflow: 'hidden',
     },
 
     btn: {

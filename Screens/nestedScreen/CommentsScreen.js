@@ -11,10 +11,26 @@ import {
     TouchableWithoutFeedback,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { db } from '../../firebase/config';
+import {
+    collection,
+    addDoc,
+    doc,
+    onSnapshot,
+    updateDoc,
+} from 'firebase/firestore';
+import { useSelector } from 'react-redux';
 
 const CommentsScreen = ({ route }) => {
+    const { postId, photo } = route.params;
     const [comment, setComment] = useState('');
     const [isShowKeyboard, setIsShowKeyboard] = useState(false);
+    const [allComments, setAllComments] = useState([]);
+    const { userId, name, avatar } = useSelector(state => state.auth);
+
+    useEffect(() => {
+        getAllComments();
+    }, []);
 
     const keyboardHide = () => {
         setIsShowKeyboard(false);
@@ -25,15 +41,45 @@ const CommentsScreen = ({ route }) => {
         setIsShowKeyboard(false);
         Keyboard.dismiss();
     };
+
+    const getAllComments = async () => {
+        onSnapshot(
+            collection(doc(collection(db, 'posts'), postId), 'comments'),
+            data => {
+                setAllComments(
+                    data.docs.map(doc => ({ ...doc.data(), id: doc.id }))
+                );
+            }
+        );
+    };
+
+    const createPost = async () => {
+        const dbRef = doc(db, 'posts', postId);
+        await updateDoc(dbRef, {
+            comments: 4,
+        });
+        await addDoc(
+            collection(doc(collection(db, 'posts'), postId), 'comments'),
+            { comment, userId, name }
+        );
+    };
     return (
         <TouchableWithoutFeedback onPress={handleKeyboadHide}>
             <View style={styles.container}>
                 {!isShowKeyboard && (
-                    <Image
-                        source={{ uri: route.params.photo }}
-                        style={styles.photo}
-                    />
+                    <Image source={{ uri: photo }} style={styles.photo} />
                 )}
+
+                <FlatList
+                    data={allComments}
+                    renderItem={({ item }) => (
+                        <View>
+                            <Text>{item.name}</Text>
+                            <Text>{item.comment}</Text>
+                        </View>
+                    )}
+                    keyExtractor={item => item.id}
+                />
 
                 <View style={{ marginBottom: 10 }}>
                     <TextInput
@@ -47,6 +93,7 @@ const CommentsScreen = ({ route }) => {
                     <TouchableOpacity
                         activeOpacity={0.7}
                         style={styles.commentButton}
+                        onPress={createPost}
                     >
                         <Feather name="arrow-up" size={24} color="#FFFFFF" />
                     </TouchableOpacity>

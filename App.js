@@ -1,11 +1,9 @@
 import { useFonts } from 'expo-font';
-import { NavigationContainer } from '@react-navigation/native';
-import { useRoute } from './router';
-import React, { useState } from 'react';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+
+import React from 'react';
+import { Provider } from 'react-redux';
 import { store } from './redux/store';
 
-import { authCurrent } from './redux/auth/authOperations';
 import { Main } from './components/Main';
 
 export default function App() {
